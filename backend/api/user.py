@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel, constr
 
 import bcrypt
 import re
@@ -8,13 +9,18 @@ from db_conn import session_open
 
 from models.model import User
 
+class CreateUser(BaseModel):
+    user_name : str
+    user_id : str
+    password: str
+    role : str
 
 router = APIRouter()
 
 # 계정 생성 요청
 @router.post("/create_user")
-async def create_user(request: Request):
-    user_data = await request.json()
+async def create_user(request: Request, request_data: CreateUser):
+    user_data = await request_data
     
     user_name = user_data['user_name']
     user_id = user_data['user_id']
@@ -97,7 +103,7 @@ async def modify_user(request:Request):
     data = await request.json()
     
     with session_open() as db:
-        user = db.query(User).filter(User.user_id == data.user_id).first()
+        user = db.query(User).filter(User.user_id == data['user_id']).first()
         
         if new_name := data.get('name'):
             user.name = new_name
@@ -118,7 +124,7 @@ async def modify_user(request:Request):
 
         db.commit()
     
-    return JSONResponse(content={'messsage' : '개인정보 수정이 완료되었습니다.'},
+    return JSONResponse(content={'message' : '개인정보 수정이 완료되었습니다.'},
                         status_code=200) 
 
 
