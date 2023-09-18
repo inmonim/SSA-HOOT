@@ -1,11 +1,10 @@
 # FastAPI
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Request, HTTPException, Header
 from fastapi.responses import JSONResponse
 
 # 모듈 및 패키지
 import bcrypt
 import re
-import jwt
 
 # DB
 from db_conn import session_open
@@ -13,7 +12,7 @@ from db_conn import session_open
 # model, DTO, JWT
 from models.model import User
 from dto.user import ( CreateUserDTO, LoginDTO, ModifyeUserDTO, IdValidDTO )
-from auth.jwt_module import create_access_token, verify_token
+from auth.jwt_module import create_access_token, create_refresh_token, verify_token
 
 # router 등록
 router = APIRouter()
@@ -58,7 +57,7 @@ async def create_user(create_user_data: CreateUserDTO):
                         status_code = 200)
 
 # 아이디 유효성 검사 요청
-@router.post('/create_user/check_valid_id')
+@router.get('/create_user/check_valid_id')
 async def check_valid_id_request(request_data : IdValidDTO):
     
     user_id = request_data.user_id
@@ -95,18 +94,23 @@ async def login(request_data: LoginDTO):
             raise HTTPException(detail = '비밀번호가 틀렸습니다.',
                                 status_code=401)
     
-    # JWT 생성
-    access_token = create_access_token(data={'sub':user.user_id, 'name':user.name})
+    # refresh token 생성
+    refresh_token = create_refresh_token(data={'sub':user.user_id, 'name':user.name})
+    # access token 생성
+    access_token = create_access_token(data={'sub':user.user_id, 'name':user.name}, refresh_token=refresh_token)
     
     return JSONResponse(content={'detail': '로그인 성공',
                                 'access_token': access_token,
+                                'refresh_token': refresh_token,
                                 'token_type':'Bearer'
                                  },
                         status_code=200)
 
 # 계정 정보 수정
-@router.put('/modify_user')
-def modify_user(request_data:ModifyeUserDTO):
+@router.put('/update_user')
+def update_user(request_data:ModifyeUserDTO, authorization: str = Header(None)):
+    
+    verify_token(authorization[7:])
     
     user_id = request_data.user_id
     new_name = request_data.user_name
@@ -116,6 +120,7 @@ def modify_user(request_data:ModifyeUserDTO):
     with session_open() as db:
         user = db.query(User).filter(User.user_id == user_id).first()
         
+        # name, role, PW 중, 들어온 데이터를 수정
         if new_name:
             user.name = new_name
         

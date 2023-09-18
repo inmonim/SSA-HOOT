@@ -1,7 +1,10 @@
+import sys
+sys.dont_write_bytecode = True
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api import user
+from api import user,create_quiz
 
 app = FastAPI()
 
@@ -17,3 +20,9 @@ app.add_middleware(
 
 
 app.include_router(user.router, prefix='/users', tags=['users'])
+app.include_router(create_quiz.router, prefix='/create_quiz', tags=['create_quiz'])
+
+if __name__ == '__main__':
+    import subprocess
+    
+    subprocess.run(["uvicorn", "main:app", "--reload"])
