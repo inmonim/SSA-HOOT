@@ -14,3 +14,7 @@
 - Pydantic을 통한 User 단위의 DTO 구현
 
 - JWT 구현 예정
+
+23/09/18
+
+- 비밀번호 암호화는 bcypt 라이브러리 활용 (salting + hashing)
