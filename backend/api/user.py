@@ -108,9 +108,9 @@ async def login(request_data: LoginDTO):
 
 # 계정 정보 수정
 @router.put('/update_user')
-def update_user(request_data:ModifyeUserDTO, authorization: str = Header(None)):
+def update_user(request_data:ModifyeUserDTO, token: str = Header(None)):
     
-    verify_token(authorization[7:])
+    verify_token(token)
     
     user_id = request_data.user_id
     new_name = request_data.user_name
