@@ -4,7 +4,7 @@ sys.dont_write_bytecode = True
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api import user,create_quiz
+from api import user, create_quiz_show
 
 app = FastAPI()
 
@@ -20,7 +20,7 @@ app.add_middleware(
 
 
 app.include_router(user.router, prefix='/users', tags=['users'])
-app.include_router(create_quiz.router, prefix='/create_quiz', tags=['create_quiz'])
+app.include_router(create_quiz_show.router, prefix='/create_quiz_show', tags=['create_quiz_show'])
 
 if __name__ == '__main__':
     import subprocess
