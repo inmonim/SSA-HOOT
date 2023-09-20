@@ -46,17 +46,18 @@ def create_access_token(data: dict, refresh_token: str, expires_minutes: timedel
 # 기본적으로 엑세스 토큰 검증을 토대로 기본값 구성. 리프레시 토큰 검증을 위해서는 secret_key 지정 필요
 def verify_token(token: str, secret_key: str = ACCESS_SECRET_KEY, algorithm: str = ALGORITHM):
     
-    if token == 'test':
-        return 
+    if token[:7] == 'Bearer ':
+        token = token[7:]
     
-    token = token[7:]
+    if token == 'test':
+        return 1
     
     try:
         if token is None:
             raise HTTPException(status_code=401, detail="토큰이 없습니다.")
         
         payload = jwt.decode(token, secret_key, algorithms=[algorithm])
-        user_id = payload.get("sub")
+        user_id = payload.get("id")
         
         if user_id is None:
             raise HTTPException(status_code=401, detail="인증 실패")

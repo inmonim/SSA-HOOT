@@ -95,9 +95,9 @@ async def login(request_data: LoginDTO):
                                 status_code=401)
     
     # refresh token 생성
-    refresh_token = create_refresh_token(data={'sub':user.user_id, 'name':user.name})
+    refresh_token = create_refresh_token(data={'id':user.id, 'sub':user.user_id, 'name':user.name})
     # access token 생성
-    access_token = create_access_token(data={'sub':user.user_id, 'name':user.name}, refresh_token=refresh_token)
+    access_token = create_access_token(data={'id':user.id, 'sub':user.user_id, 'name':user.name}, refresh_token=refresh_token)
     
     return JSONResponse(content={'detail': '로그인 성공',
                                 'access_token': access_token,
