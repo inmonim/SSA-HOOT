@@ -1,13 +1,13 @@
 from pydantic import BaseModel, Field
 
 
-class CreateQuizShowDTD(BaseModel):
-    quiz_name : str = Field(..., max_length=20, example="퀴즈 제목")
-    description : str = Field(None, max_length=200, example="퀴즈 설명")
-    is_open : bool
+class CreateQuizDTO(BaseModel):
     
-class UpdateQuizShowDTO(BaseModel):
-    quiz_id : int
-    quiz_name : str = Field(None, max_length=20, example="퀴즈 제목")
-    description : str = Field(None, max_length=200, example="퀴즈 설명")
-    is_open : bool = None
+    quiz_show_id : int
+    question : str = Field(..., max_length=300, example="SSA-HOOT의 개발자는?")
+    question_type : str = Field(..., max_length=1,
+                                description="1: 다지선다\n2: 참거짓\n3:초성 퀴즈\n4:단어맞추기\n5:배열 맞추기",
+                                example=1)
+    question_img_path : str = None
+    thumbnail_time : int = Field(5,le=0, ge=60, example=5)
+    time_limit : int = Field(20, le=5, ge=120)
