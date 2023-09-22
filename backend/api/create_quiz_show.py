@@ -17,6 +17,7 @@ from auth.jwt_module import verify_token
 # router 등록
 router = APIRouter()
 
+# 퀴즈쇼 생성
 @router.post('/create_quiz_show')
 async def create_quiz_show(request_data : CreateQuizShowDTO, user : int =  Depends(verify_token)):
     
@@ -37,7 +38,7 @@ async def create_quiz_show(request_data : CreateQuizShowDTO, user : int =  Depen
     
     return JSONResponse(content={"detail" : "퀴즈 생성 완료"}, status_code=200)
 
-
+# 퀴즈쇼 업데이트
 @router.put('/update_quiz_show')
 async def update_quiz_show(request_data : UpdateQuizShowDTO, user : int =  Depends(verify_token)):
     
@@ -64,6 +65,7 @@ async def update_quiz_show(request_data : UpdateQuizShowDTO, user : int =  Depen
     
     return JSONResponse(content={"detail":"수정 완료"}, status_code=200)
 
+# 퀴즈쇼 삭제
 @router.delete('/delete_quiz_show')
 async def delete_quiz_show(quiz_id:int, user : int =  Depends(verify_token)):
     
