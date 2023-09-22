@@ -1,5 +1,5 @@
 # FastAPI
-from fastapi import APIRouter, Request, Header, HTTPException
+from fastapi import APIRouter, Request, Depends, Header, HTTPException
 from fastapi.responses import JSONResponse
 
 # 모듈 및 패키지
@@ -18,8 +18,7 @@ from auth.jwt_module import verify_token
 router = APIRouter()
 
 @router.post('/create_quiz_show')
-async def create_quiz_show(request_data : CreateQuizShowDTO, token:str = Header(None)):
-    user_id = verify_token(token)
+async def create_quiz_show(request_data : CreateQuizShowDTO, user : int =  Depends(verify_token)):
     
     quiz_name = request_data.quiz_name
     description = request_data.description
@@ -29,7 +28,7 @@ async def create_quiz_show(request_data : CreateQuizShowDTO, token:str = Header(
         
         quiz_show = QuizShow()
         quiz_show.quiz_name = quiz_name
-        quiz_show.host_id = user_id
+        quiz_show.host_id = user
         quiz_show.description = description
         quiz_show.is_open = is_open
         
@@ -40,8 +39,7 @@ async def create_quiz_show(request_data : CreateQuizShowDTO, token:str = Header(
 
 
 @router.put('/update_quiz_show')
-async def update_quiz_show(request_data : UpdateQuizShowDTO, token: str = Header(None)):
-    verify_token(token)
+async def update_quiz_show(request_data : UpdateQuizShowDTO, user : int =  Depends(verify_token)):
     
     quiz_id = request_data.quiz_id
     quiz_name = request_data.quiz_name
@@ -51,6 +49,9 @@ async def update_quiz_show(request_data : UpdateQuizShowDTO, token: str = Header
     with session_open() as db:
         
         quiz_show = db.query(QuizShow).get(quiz_id)
+        
+        if quiz_show.host_id != user:
+            raise HTTPException(detail={"detail" : "권한이 없습니다."}, status_code=403)
         
         if quiz_name:
             quiz_show.quiz_name = quiz_name
@@ -64,14 +65,13 @@ async def update_quiz_show(request_data : UpdateQuizShowDTO, token: str = Header
     return JSONResponse(content={"detail":"수정 완료"}, status_code=200)
 
 @router.delete('/delete_quiz_show')
-async def delete_quiz_show(quiz_id:int, token: str = Header(None)):
-    user_id = verify_token(token)
+async def delete_quiz_show(quiz_id:int, user : int =  Depends(verify_token)):
     
     with session_open() as db:
         quiz_show = db.query(QuizShow).get(quiz_id)
         
-        if quiz_show.host_id != user_id:
-            return JSONResponse(content={"detail":"권한이 없습니다."}, status_code=403)
+        if quiz_show.host_id != user:
+            raise HTTPException(content={"detail":"권한이 없습니다."}, status_code=403)
         
         db.delete(quiz_show)
         

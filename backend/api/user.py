@@ -18,9 +18,6 @@ from auth.jwt_module import create_access_token, create_refresh_token, verify_to
 # router 등록
 router = APIRouter()
 
-# Oauth 객체 생성
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl='token')
-
 # 계정 생성 요청
 @router.post("/create_user")
 async def create_user(create_user_data: CreateUserDTO):
@@ -120,7 +117,7 @@ async def login(request_data : OAuth2PasswordRequestForm = Depends()):
 
 # 계정 정보 수정
 @router.put('/update_user')
-def update_user(request_data:ModifyeUserDTO, user: str = Depends(verify_token)):
+def update_user(request_data:ModifyeUserDTO, user: int = Depends(verify_token)):
     
     new_name = request_data.user_name
     new_plain_pw = request_data.password
