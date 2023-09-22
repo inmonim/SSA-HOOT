@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 
 
-class CreateQuizShowDTD(BaseModel):
+class CreateQuizShowDTO(BaseModel):
     quiz_name : str = Field(..., max_length=20, example="퀴즈 제목")
     description : str = Field(None, max_length=200, example="퀴즈 설명")
     is_open : bool

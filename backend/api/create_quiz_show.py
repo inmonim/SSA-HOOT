@@ -10,7 +10,7 @@ from db_conn import session_open
 # model, DTO, JWT
 from models.model import QuizShow
 
-from dto.create_quiz import CreateQuizShowDTD, UpdateQuizShowDTO
+from dto.create_quiz_show import CreateQuizShowDTO, UpdateQuizShowDTO
 
 from auth.jwt_module import verify_token
 
@@ -18,7 +18,7 @@ from auth.jwt_module import verify_token
 router = APIRouter()
 
 @router.post('/create_quiz_show')
-async def create_quiz_show(request_data : CreateQuizShowDTD, token:str = Header(None)):
+async def create_quiz_show(request_data : CreateQuizShowDTO, token:str = Header(None)):
     user_id = verify_token(token)
     
     quiz_name = request_data.quiz_name
