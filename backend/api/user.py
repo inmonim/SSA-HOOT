@@ -1,6 +1,7 @@
 # FastAPI
-from fastapi import APIRouter, Request, HTTPException, Header
+from fastapi import APIRouter, Request, HTTPException, Header, Depends
 from fastapi.responses import JSONResponse
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 # 모듈 및 패키지
 import bcrypt
@@ -11,11 +12,14 @@ from db_conn import session_open
 
 # model, DTO, JWT
 from models.model import User
-from dto.user import ( CreateUserDTO, LoginDTO, ModifyeUserDTO, IdValidDTO )
+from dto.user import ( CreateUserDTO, ModifyeUserDTO, IdValidDTO, LoginDTO )
 from auth.jwt_module import create_access_token, create_refresh_token, verify_token
 
 # router 등록
 router = APIRouter()
+
+# Oauth 객체 생성
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl='token')
 
 # 계정 생성 요청
 @router.post("/create_user")
@@ -72,10 +76,18 @@ async def check_valid_id_request(request_data : IdValidDTO):
 
 # 로그인 요청
 @router.post('/login')
-async def login(request_data: LoginDTO):
+async def login(request_data : OAuth2PasswordRequestForm = Depends()):
     
-    input_id = request_data.user_id
+    input_id = request_data.username
     input_pw = request_data.password
+    
+    pattern = r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$'
+    if not bool(re.match(pattern, input_id)):
+        raise HTTPException(detail= 'ID는 영문자와 숫자를 포함하여 6자 이상입니다.', status_code = 409)
+    
+    pattern = r'^(?=.*[a-zA-Z])(?=.*\d).{8,}$'
+    if not bool(re.match(pattern, input_pw)):
+        raise HTTPException(detail= '비밀번호는 영문자와 숫자를 포함하여 8자 이상입니다.', status_code = 409)
     
     with session_open() as db:
         
@@ -108,9 +120,7 @@ async def login(request_data: LoginDTO):
 
 # 계정 정보 수정
 @router.put('/update_user')
-def update_user(request_data:ModifyeUserDTO, token: str = Header(None)):
-    
-    verify_token(token)
+def update_user(request_data:ModifyeUserDTO, user: str = Depends(verify_token)):
     
     user_id = request_data.user_id
     new_name = request_data.user_name
@@ -143,7 +153,15 @@ def update_user(request_data:ModifyeUserDTO, token: str = Header(None)):
         db.commit()
     
     return JSONResponse(content={'detail' : '개인정보 수정이 완료되었습니다.'},
-                        status_code=200) 
+                        status_code=200)
+
+@router.get('/get_user')
+async def get_user(user_id : int = Depends(verify_token)):
+    
+    with session_open() as db:
+        user = db.query(User).get(user_id)
+    
+    return user
 
 
 # 아이디 유효성 검사 함수

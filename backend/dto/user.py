@@ -15,6 +15,7 @@ class IdValidDTO(BaseModel):
                           description="id는 영문과 숫자를 포함해 6자 이상 20자 이하", example="ssafy1") 
 
 
+
 class LoginDTO(BaseModel):
     user_id : str = Field(..., min_length=6, max_length=20, pattern=r"^[a-zA-Z0-9]{6,}$",
                           description="id는 영문과 숫자를 포함해 6자 이상 20자 이하", example="ssafy1")
