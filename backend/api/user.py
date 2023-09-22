@@ -122,13 +122,12 @@ async def login(request_data : OAuth2PasswordRequestForm = Depends()):
 @router.put('/update_user')
 def update_user(request_data:ModifyeUserDTO, user: str = Depends(verify_token)):
     
-    user_id = request_data.user_id
     new_name = request_data.user_name
     new_plain_pw = request_data.password
     new_role = request_data.role
     
     with session_open() as db:
-        user = db.query(User).filter(User.user_id == user_id).first()
+        user = db.query(User).get(user)
         
         # name, role, PW 중, 들어온 데이터를 수정
         if new_name:
