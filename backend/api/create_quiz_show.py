@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from db_conn import session_open
 
 # model, DTO, JWT
-from models.model import QuizShow, QuizShow_Quiz
+from models.model import QuizShow, QuizShow_Quiz, Quiz
 
 from dto.create_quiz_show import CreateQuizShowDTO, UpdateQuizShowDTO, QuizSetDTO
 
@@ -19,16 +19,16 @@ router = APIRouter()
 
 # 퀴즈쇼 생성
 @router.post('/create_quiz_show')
-async def create_quiz_show(request_data : CreateQuizShowDTO, user : int =  Depends(verify_token)):
+async def create_quiz_show(create_quiz_show_dto : CreateQuizShowDTO, user : int =  Depends(verify_token)):
     
-    quiz_name = request_data.quiz_name
-    description = request_data.description
-    is_open = request_data.is_open
+    quiz_show_name = create_quiz_show_dto.quiz_show_name
+    description = create_quiz_show_dto.description
+    is_open = create_quiz_show_dto.is_open
     
     with session_open() as db:
         
         quiz_show = QuizShow()
-        quiz_show.quiz_name = quiz_name
+        quiz_show.quiz_show_name = quiz_show_name
         quiz_show.host_id = user
         quiz_show.description = description
         quiz_show.is_open = is_open
@@ -40,22 +40,22 @@ async def create_quiz_show(request_data : CreateQuizShowDTO, user : int =  Depen
 
 # 퀴즈쇼 업데이트
 @router.put('/update_quiz_show')
-async def update_quiz_show(request_data : UpdateQuizShowDTO, user : int =  Depends(verify_token)):
+async def update_quiz_show(update_quiz_show_dto : UpdateQuizShowDTO, user : int =  Depends(verify_token)):
     
-    quiz_id = request_data.quiz_id
-    quiz_name = request_data.quiz_name
-    description = request_data.description
-    is_open = request_data.is_open 
+    quiz_show_id = update_quiz_show_dto.quiz_show_id
+    quiz_show_name = update_quiz_show_dto.quiz_show_name
+    description = update_quiz_show_dto.description
+    is_open = update_quiz_show_dto.is_open 
     
     with session_open() as db:
         
-        quiz_show = db.query(QuizShow).get(quiz_id)
+        quiz_show = db.query(QuizShow).get(quiz_show_id)
         
         if quiz_show.host_id != user:
             raise HTTPException(detail="권한이 없습니다.", status_code=403)
         
-        if quiz_name:
-            quiz_show.quiz_name = quiz_name
+        if quiz_show_name:
+            quiz_show.quiz_show_name = quiz_show_name
         if description:
             quiz_show.description = description
         if is_open:
@@ -71,6 +71,8 @@ async def delete_quiz_show(quiz_id: int, user : int =  Depends(verify_token)):
     
     with session_open() as db:
         quiz_show = db.query(QuizShow).get(quiz_id)
+        if not quiz_show:
+            raise HTTPException(detail="존재하지 않는 리소스입니다.", status_code=410)
         
         if quiz_show.host_id != user:
             raise HTTPException(detail="권한이 없습니다.", status_code=403)
@@ -94,6 +96,14 @@ async def set_quiz(quiz_set_dto : QuizSetDTO, user : int = Depends(verify_token)
         quiz_show_quiz = QuizShow_Quiz()
         
         quiz_show = db.query(QuizShow).get(quiz_show_id)
+        
+        # quiz_show가 있는지 확인
+        if not quiz_show:
+            raise HTTPException(detail="퀴즈쇼가 존재하지 않습니다.", status_code=404)
+        
+        # quiz가 있는지 확인
+        if not db.query(Quiz).get(quiz_id):
+            raise HTTPException(detail="퀴즈가 존재하지 않습니다.", status_code=404)
         
         # quiz_show의 주인이 아닐 경우
         if quiz_show.host_id != user:

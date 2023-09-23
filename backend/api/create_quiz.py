@@ -50,7 +50,7 @@ async def create_quiz(create_quiz_dto : CreateQuizDTO, user: int = Depends(verif
             quiz_show_quiz.quiz_show_id = quiz_show_id
             quiz_show_quiz.quiz_id = quiz.id
             
-            db.add(quiz)
+            db.add(quiz_show_quiz)
         
         # 해당 퀴즈의 주인인 User와의 연결 테이블 생성
         user_quiz = User_Quiz()
@@ -63,19 +63,23 @@ async def create_quiz(create_quiz_dto : CreateQuizDTO, user: int = Depends(verif
     return JSONResponse(content={'detail' : '퀴즈 생성 성공'}, status_code=200)
 
 # open된 quiz를 user가 가져오기
-@router.post('get_open_quiz')
+@router.post('/get_open_quiz')
 async def get_open_quiz(quiz_id : int, user: int = Depends(verify_token)):
     
     with session_open() as db:
         
         quiz = db.query(Quiz).get(quiz_id)
+        
+        # 퀴즈가 존재하는지 확인
+        if not quiz:
+            raise HTTPException(detail="존재하지 않는 컨텐츠입니다.", status_code=404)
 
         # 오픈되어있는 퀴즈인지 확인
         if quiz.is_open == 0:
             raise HTTPException(detail="권한이 없습니다.", status_code=403)
         
         # 중복으로 가지고 있는지 확인
-        if db.query(User_Quiz).filter(user_id=user, quiz_id=quiz_id):
+        if db.query(User_Quiz).filter(User_Quiz.user_id==user, User_Quiz.quiz_id==quiz_id).first():
             raise HTTPException(detail="이미 존재하는 컨텐츠입니다.", status_code=409)
 
         user_quiz = User_Quiz()

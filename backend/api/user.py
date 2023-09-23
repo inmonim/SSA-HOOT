@@ -58,7 +58,7 @@ async def create_user(create_user_data: CreateUserDTO):
                         status_code = 200)
 
 # 아이디 유효성 검사 요청
-@router.get('/create_user/check_valid_id')
+@router.put('/create_user/check_valid_id')
 async def check_valid_id_request(request_data : IdValidDTO):
     
     user_id = request_data.user_id
