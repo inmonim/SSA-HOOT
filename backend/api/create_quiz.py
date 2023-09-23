@@ -26,6 +26,7 @@ async def create_quiz(create_quiz_dto : CreateQuizDTO, user: int = Depends(verif
         quiz = Quiz()
 
         # 기본적인 퀴즈 객체 생성
+        quiz.user_id = user
         quiz.question = create_quiz_dto.question
         quiz.question_type = create_quiz_dto.question_type
         quiz.question_img_path = create_quiz_dto.question_img_path
@@ -46,19 +47,16 @@ async def create_quiz(create_quiz_dto : CreateQuizDTO, user: int = Depends(verif
             if quiz_show.host_id != user:
                 raise HTTPException(detail='권한이 없습니다.', status_code=403)
             
+            in_order = create_quiz_dto.in_order
+            
             quiz_show_quiz = QuizShow_Quiz()
             quiz_show_quiz.quiz_show_id = quiz_show_id
             quiz_show_quiz.quiz_id = quiz.id
+            quiz_show_quiz.in_order = in_order
             
             db.add(quiz_show_quiz)
-        
-        # 해당 퀴즈의 주인인 User와의 연결 테이블 생성
-        user_quiz = User_Quiz()
-        user_quiz.user_id = user
-        user_quiz.quiz_id = quiz.id
-        db.add(user_quiz)
             
-        db.commit()
+            db.commit()
         
     return JSONResponse(content={'detail' : '퀴즈 생성 성공'}, status_code=200)
 
@@ -78,15 +76,17 @@ async def get_open_quiz(quiz_id : int, user: int = Depends(verify_token)):
         if quiz.is_open == 0:
             raise HTTPException(detail="권한이 없습니다.", status_code=403)
         
-        # 중복으로 가지고 있는지 확인
-        if db.query(User_Quiz).filter(User_Quiz.user_id==user, User_Quiz.quiz_id==quiz_id).first():
-            raise HTTPException(detail="이미 존재하는 컨텐츠입니다.", status_code=409)
-
-        user_quiz = User_Quiz()
-        user_quiz.user_id = user
-        user_quiz.quiz_id = quiz_id
+        # 새로운 퀴즈 객체로 할당, user_id만 변경
+        clone_quiz = Quiz()
+        clone_quiz.user_id = user
+        clone_quiz.question = quiz.question
+        clone_quiz.question_type = quiz.question_type
+        clone_quiz.question_img_path = quiz.question_img_path
+        clone_quiz.thumbnail_time = quiz.thumbnail_time
+        clone_quiz.time_limit = quiz.time_limit
         
-        db.add(user_quiz)
+        # 새로운 퀴즈 객체 등록
+        db.add(clone_quiz)
         db.commit()
         
     return JSONResponse(content={'detail' : "퀴즈 가져오기 성공"}, status_code=200)
