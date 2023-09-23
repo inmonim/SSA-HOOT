@@ -8,9 +8,9 @@ from fastapi.responses import JSONResponse
 from db_conn import session_open
 
 # model, DTO, JWT
-from models.model import QuizShow
+from models.model import QuizShow, QuizShow_Quiz
 
-from dto.create_quiz_show import CreateQuizShowDTO, UpdateQuizShowDTO
+from dto.create_quiz_show import CreateQuizShowDTO, UpdateQuizShowDTO, QuizSetDTO
 
 from auth.jwt_module import verify_token
 
@@ -52,7 +52,7 @@ async def update_quiz_show(request_data : UpdateQuizShowDTO, user : int =  Depen
         quiz_show = db.query(QuizShow).get(quiz_id)
         
         if quiz_show.host_id != user:
-            raise HTTPException(detail={"detail" : "권한이 없습니다."}, status_code=403)
+            raise HTTPException(detail="권한이 없습니다.", status_code=403)
         
         if quiz_name:
             quiz_show.quiz_name = quiz_name
@@ -67,16 +67,42 @@ async def update_quiz_show(request_data : UpdateQuizShowDTO, user : int =  Depen
 
 # 퀴즈쇼 삭제
 @router.delete('/delete_quiz_show')
-async def delete_quiz_show(quiz_id:int, user : int =  Depends(verify_token)):
+async def delete_quiz_show(quiz_id: int, user : int =  Depends(verify_token)):
     
     with session_open() as db:
         quiz_show = db.query(QuizShow).get(quiz_id)
         
         if quiz_show.host_id != user:
-            raise HTTPException(content={"detail":"권한이 없습니다."}, status_code=403)
+            raise HTTPException(detail="권한이 없습니다.", status_code=403)
         
         db.delete(quiz_show)
         
         db.commit()
     
     return JSONResponse(content={"detail":"삭제 완료"}, status_code=200)
+
+# 퀴즈쇼에 퀴즈 등록
+@router.post('/set_quiz')
+async def set_quiz(quiz_set_dto : QuizSetDTO, user : int = Depends(verify_token)):
+    
+    quiz_id = quiz_set_dto.quiz_id
+    quiz_show_id = quiz_set_dto.quiz_show_id
+    
+    with session_open() as db:
+        
+        # quizshow_quiz 연결 테이블 생성
+        quiz_show_quiz = QuizShow_Quiz()
+        
+        quiz_show = db.query(QuizShow).get(quiz_show_id)
+        
+        # quiz_show의 주인이 아닐 경우
+        if quiz_show.host_id != user:
+            raise HTTPException(detail="권한이 없습니다.", status_code=403)
+        
+        quiz_show_quiz.quiz_id = quiz_id
+        quiz_show_quiz.quiz_show_id = quiz_show_id
+        
+        db.add(quiz_show_quiz)
+        db.commit()
+        
+    return JSONResponse(content={"detail":"등록 성공"}, status_code=200)

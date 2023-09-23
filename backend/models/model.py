@@ -15,3 +15,6 @@ QuizQuestion = Base.classes.quiz_question
 
 # QuizShow - Quiz 연결 테이블
 QuizShow_Quiz = Base.classes.quiz_show_quiz
+
+# User - Quiz 연결 테이블
+User_Quiz = Base.classes.user_quiz
