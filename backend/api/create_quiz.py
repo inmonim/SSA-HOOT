@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from db_conn import session_open
 
 # model, DTO, JWT
-from models.model import ( QuizShow, QuizShow_Quiz, Quiz, User_Quiz )
+from models.model import ( QuizShow, QuizShow_Quiz, Quiz, QuizAnswer )
 
 from dto.create_quiz import CreateQuizDTO
 
@@ -17,9 +17,103 @@ from auth.jwt_module import verify_token
 # router 등록
 router = APIRouter()
 
+# 퀴즈와 답변 쌍은 무조건 그 편집화면을 나가기 전에 저장해야함.
+@router.post('/test')
+async def test(create_quiz_dto: CreateQuizDTO, user : int = Depends(verify_token)):
+    quiz_show_id = create_quiz_dto.quiz_show_id
+    in_order = create_quiz_dto.in_order
+    
+    quiz_answer_pair = create_quiz_dto.quiz_answer_pair
+    quiz_data = quiz_answer_pair.quiz
+    answer_list = sorted(quiz_answer_pair.answer, key=lambda x:x.answer_num)
+    
+    with session_open() as db:
+        
+        # 퀴즈와 답변 쌍을 새로 만드는 경우
+        if not quiz_data.quiz_id:
+        
+            quiz = Quiz()
+            quiz.user_id = user
+            quiz.question = quiz_data.question
+            quiz.question_type = quiz_data.question_type
+            quiz.question_img_path = quiz_data.question_img_path
+            quiz.thumbnail_time = quiz_data.thumbnail_time
+            quiz.time_limit = quiz_data.time_limit
+            quiz.is_open = quiz_data.is_open
+            
+            db.add(quiz)
+            db.commit()
+            
+            for answer_data in answer_list:
+                
+                answer = QuizAnswer()
+                answer.quiz_id = quiz.id
+                answer.answer_num = answer_data.answer_num
+                answer.answer = answer_data.answer
+                answer.is_answer = answer_data.is_answer
+                answer.answer_img_path = answer_data.answer_img_path
+                
+                db.add(answer)
+        
+        # 이미 존재하는 퀴즈를 수정하는 경우
+        else:
+            quiz = db.query(Quiz).get(quiz_data.quiz_id)
+            quiz.user_id = user
+            quiz.question = quiz_data.question
+            quiz.question_type = quiz_data.question_type
+            quiz.question_img_path = quiz_data.question_img_path
+            quiz.thumbnail_time = quiz_data.thumbnail_time
+            quiz.time_limit = quiz_data.time_limit
+            quiz.is_open = quiz_data.is_open
+            
+            
+            # 존재하던 퀴즈 답변 쌍 받아온 뒤, answer_num 기준으로 정렬
+            old_answer_list = db.query(QuizAnswer).filter(QuizAnswer.quiz_id==quiz.id).all()
+            old_answer_list.sort(key=lambda x:x.answer_num)
+            
+            
+            # 존재하던 답변에 answer_num 순서로 덮어씌우기
+            for i in range(len(answer_list)):
+                new_answer = answer_list[i]
+                
+                # 존재하던 답변의 개수가 생성할 퀴즈의 수보다 작아진 경우
+                if len(old_answer_list) <= i:
+                    answer = QuizAnswer()
+                # 생성할 퀴즈의 수가 존재하던 답변의 수와 같거나 작기 전까지
+                else:
+                    answer = old_answer_list[i]
+                answer.quiz_id = quiz.id
+                answer.answer_num = new_answer.answer_num
+                answer.answer = new_answer.answer
+                answer.is_answer = new_answer.is_answer
+                answer.answer_img_path = new_answer.answer_img_path
+                
+                db.add(answer)
+            
+            # 새로운 답변보다 많았던 기존의 답변 삭제
+            for i in range(len(answer_list), len(old_answer_list)):
+                old_answer = old_answer_list[i]
+                
+                db.delete(old_answer)
+        # 퀴즈쇼 - 퀴즈에서 순서를 조정
+        if quiz_show_quiz := db.query(QuizShow_Quiz).filter(QuizShow_Quiz.quiz_show_id == quiz_show_id, QuizShow_Quiz.quiz_id==quiz.id).first():
+            quiz_show_quiz.in_order = in_order
+        else:
+            quiz_show_quiz = QuizShow_Quiz()
+            quiz_show_quiz.quiz_show_id = quiz_show_id
+            quiz_show_quiz.quiz_id = quiz.id
+            quiz_show_quiz.in_order = in_order
+            
+        db.add(quiz_show_quiz)
+          
+        db.commit()
+    
+    return JSONResponse(content={"detail" : "데이터 입력 성공"}, status_code=200)
+
 # 퀴즈 생성
 @router.post('/creat_quiz')
 async def create_quiz(create_quiz_dto : CreateQuizDTO, user: int = Depends(verify_token)):
+    
     
     with session_open() as db:
         
@@ -90,3 +184,19 @@ async def get_open_quiz(quiz_id : int, user: int = Depends(verify_token)):
         db.commit()
         
     return JSONResponse(content={'detail' : "퀴즈 가져오기 성공"}, status_code=200)
+
+
+@router.post('/')
+async def testtttest():
+    with session_open() as db:
+        
+        quiz_answer = db.query(QuizAnswer).get(1)
+        
+        quiz_answer.answer = "이것은 바뀌는지 테스트 해볼라고!"
+        
+        db.add(quiz_answer)
+        db.commit()
+        
+
+        
+    return JSONResponse(content=quiz_answer)

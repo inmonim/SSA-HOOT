@@ -92,7 +92,7 @@ async def set_quiz(quiz_set_dto : QuizSetDTO, user : int = Depends(verify_token)
     
     with session_open() as db:
         
-        # quizshow_quiz 연결 테이블 생성
+        # quizshow_quiz 연결 테이블 객체 생성
         quiz_show_quiz = QuizShow_Quiz()
         
         quiz_show = db.query(QuizShow).get(quiz_show_id)
