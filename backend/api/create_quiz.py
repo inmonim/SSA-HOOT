@@ -18,6 +18,54 @@ from auth.jwt_module import verify_token
 router = APIRouter()
 
 
+# 내 퀴즈쇼 불러오기
+@router.get('/get_my_quiz_list')
+async def get_my_quiz_list(quiz_show_id : int, user: int = Depends(verify_token)):
+    
+    with session_open() as db:
+        # 신원 확인
+        if user != db.query(QuizShow).get(quiz_show_id).host_id:
+            raise HTTPException(detail="권한이 없습니다.", status_code=403)
+        
+        # 퀴즈쇼 - 퀴즈 연결 테이블에서 퀴즈쇼에 연결된 퀴즈 객체 가져오기
+        quiz_show_quiz_list = db.query(QuizShow_Quiz).filter(QuizShow_Quiz.quiz_show_id == quiz_show_id).all()
+        
+        # 퀴즈쇼 객체 가져오기
+        quiz_show = db.query(QuizShow).get(quiz_show_id)
+        
+        result = {}
+        quiz_result_list = []
+        
+        # 연결 테이블 객체 순회
+        for quiz_show_quiz in quiz_show_quiz_list:
+            
+            # 퀴즈 객체 가져오기
+            quiz = db.query(Quiz).get(quiz_show_quiz.quiz_id)
+            
+            # 순서 파악
+            in_order = quiz_show_quiz.in_order
+            
+            # 퀴즈에 연결된 답변 가져오기
+            answer_query_list = db.query(QuizAnswer).filter(QuizAnswer.quiz_id == quiz.id).all()
+            answer_list = []
+            for answer in answer_query_list:
+                answer_list.append(answer)
+            
+            # 직렬화
+            quiz_result = {'quiz' : quiz,
+             'in_order' : in_order,
+             'answer_list' : answer_list}
+            
+            # 직렬화 한 퀴즈-답변쌍을 리스트에 추가
+            quiz_result_list.append(quiz_result)
+        
+    # 최종 결과 직렬화
+    result = { 'quiz_show' : quiz_show,
+            'quiz_answer_pair' : quiz_result_list}
+    
+    return result
+        
+
 # 퀴즈와 답변 쌍은 무조건 그 편집화면을 나가기 전에 저장해야함.
 @router.post("/create_quiz")
 async def create_quiz(
@@ -114,7 +162,6 @@ async def create_quiz(
 
         # 퀴즈쇼 - 퀴즈에서 순서를 조정
         # quiz_show_id 및 quiz_id 연결쌍이 존재하는 경우, 순서만 수정
-        # 다만, 퀴즈 생성에서 순서를 자유롭게 할 게 아니라면, 아래 코드는 불필요할 수 있음.
         if (
             quiz_show_quiz := db.query(QuizShow_Quiz)
             .filter(
