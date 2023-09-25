@@ -12,6 +12,8 @@ from models.model import QuizShow, QuizShow_Quiz, Quiz, QuizAnswer
 
 from dto.create_quiz import CreateQuizDTO, UpdateQuizOrderDTO, QuizID
 
+from response.create_quiz import QuizListResponse
+
 from auth.jwt_module import verify_token
 
 # router 등록
@@ -19,52 +21,57 @@ router = APIRouter()
 
 
 # 내 퀴즈쇼 불러오기
-@router.get('/get_my_quiz_list')
-async def get_my_quiz_list(quiz_show_id : int, user: int = Depends(verify_token)):
-    
+@router.get("/get_my_quiz_list", response_model=QuizListResponse)
+async def get_my_quiz_list(quiz_show_id: int, user: int = Depends(verify_token)):
     with session_open() as db:
         # 신원 확인
         if user != db.query(QuizShow).get(quiz_show_id).host_id:
             raise HTTPException(detail="권한이 없습니다.", status_code=403)
-        
+
         # 퀴즈쇼 - 퀴즈 연결 테이블에서 퀴즈쇼에 연결된 퀴즈 객체 가져오기
-        quiz_show_quiz_list = db.query(QuizShow_Quiz).filter(QuizShow_Quiz.quiz_show_id == quiz_show_id).all()
-        
+        quiz_show_quiz_list = (
+            db.query(QuizShow_Quiz)
+            .filter(QuizShow_Quiz.quiz_show_id == quiz_show_id)
+            .all()
+        )
+
         # 퀴즈쇼 객체 가져오기
         quiz_show = db.query(QuizShow).get(quiz_show_id)
-        
+
         result = {}
         quiz_result_list = []
-        
+
         # 연결 테이블 객체 순회
         for quiz_show_quiz in quiz_show_quiz_list:
-            
             # 퀴즈 객체 가져오기
             quiz = db.query(Quiz).get(quiz_show_quiz.quiz_id)
-            
+
             # 순서 파악
             in_order = quiz_show_quiz.in_order
-            
+
             # 퀴즈에 연결된 답변 가져오기
-            answer_query_list = db.query(QuizAnswer).filter(QuizAnswer.quiz_id == quiz.id).all()
+            answer_query_list = (
+                db.query(QuizAnswer).filter(QuizAnswer.quiz_id == quiz.id).all()
+            )
             answer_list = []
             for answer in answer_query_list:
                 answer_list.append(answer)
-            
+
             # 직렬화
-            quiz_result = {'quiz' : quiz,
-             'in_order' : in_order,
-             'answer_list' : answer_list}
-            
+            quiz_result = {
+                "quiz": quiz,
+                "in_order": in_order,
+                "answer_list": answer_list,
+            }
+
             # 직렬화 한 퀴즈-답변쌍을 리스트에 추가
             quiz_result_list.append(quiz_result)
-        
+
     # 최종 결과 직렬화
-    result = { 'quiz_show' : quiz_show,
-            'quiz_answer_pair' : quiz_result_list}
-    
+    result = {"quiz_show": quiz_show, "quiz_answer_pair": quiz_result_list}
+
     return result
-        
+
 
 # 퀴즈와 답변 쌍은 무조건 그 편집화면을 나가기 전에 저장해야함.
 @router.post("/create_quiz")
@@ -188,7 +195,9 @@ async def create_quiz(
 
 # 퀴즈쇼 내의 퀴즈 순서 수정
 @router.post("/change_order")
-async def change_quiz_order(quiz_order_dto: UpdateQuizOrderDTO, user: int = Depends(verify_token)):
+async def change_quiz_order(
+    quiz_order_dto: UpdateQuizOrderDTO, user: int = Depends(verify_token)
+):
     quiz_show_id = quiz_order_dto.quiz_show_id
 
     # 새로운 퀴즈쇼 - 퀴즈 순서 데이터 불러와 순서대로 정렬
@@ -236,25 +245,34 @@ async def delete_quiz(quiz_id: QuizID, user: int = Depends(verify_token)):
         answer_list = db.query(QuizAnswer).filter(QuizAnswer.quiz_id == quiz_id).all()
         for answer in answer_list:
             db.delete(answer)
-        
+
         # 퀴즈쇼 - 퀴즈 연결 테이블에서 퀴즈 삭제
-        quiz_show_quiz = db.query(QuizShow_Quiz).filter(QuizShow_Quiz.quiz_id == quiz_id).first()
+        quiz_show_quiz = (
+            db.query(QuizShow_Quiz).filter(QuizShow_Quiz.quiz_id == quiz_id).first()
+        )
         quiz_show_id = quiz_show_quiz.quiz_show_id
-        
+
         # 삭제될 퀴즈의 순서 파악
         quiz_in_order = quiz_show_quiz.in_order
-        
+
         # 삭제될 퀴즈가 속한 퀴즈쇼 내에서, 해당 퀴즈보다 후순위에 있는 퀴즈 객체 가져오기
-        quiz_show_quiz_list = db.query(QuizShow_Quiz).filter(QuizShow_Quiz.quiz_show_id == quiz_show_id, QuizShow_Quiz.in_order > quiz_in_order).all()
-        
+        quiz_show_quiz_list = (
+            db.query(QuizShow_Quiz)
+            .filter(
+                QuizShow_Quiz.quiz_show_id == quiz_show_id,
+                QuizShow_Quiz.in_order > quiz_in_order,
+            )
+            .all()
+        )
+
         # 퀴즈의 순서 한 칸 씩 당기기
         for qsq in quiz_show_quiz_list:
             qsq.in_order -= 1
             db.add(qsq)
-        
+
         # 퀴즈쇼 - 퀴즈 객체 삭제
         db.delete(quiz_show_quiz)
-        
+
         # 퀴즈 삭제
         db.delete(quiz)
         db.commit()
