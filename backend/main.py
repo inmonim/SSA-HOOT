@@ -8,7 +8,7 @@ from api import user, create_quiz_show, create_quiz
 
 app = FastAPI()
 
-origins = [""]
+origins = ["http://localhost:3000"]
 
 app.add_middleware(
     CORSMiddleware,

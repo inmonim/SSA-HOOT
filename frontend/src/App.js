@@ -1,13 +1,15 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 
-import Chat from './components/Chat';
+import Home from './Pages/Home'
+import CreateQuizShowPage from './Pages/CreateQuizShowPage'
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/chat/:client_id" element={<Chat />} />
+        <Route path="/" element={<Home />} />
+        <Route path="create_quiz" element={<CreateQuizShowPage />} />
       </Routes>
     </Router>
   );
