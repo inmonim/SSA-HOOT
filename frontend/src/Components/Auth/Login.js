@@ -24,7 +24,8 @@ function Login({ isOpen, onClose }) {
 
     axios.post('http://127.0.0.1:8000/users/login', login_data, config)
       .then(response => {
-
+        const accessToken = response.data.access_token
+        localStorage.setItem('accessToken', accessToken);
         console.log(response)
       })
       .catch(error => {
