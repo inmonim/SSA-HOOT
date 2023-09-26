@@ -15,7 +15,7 @@ class QuizObj(BaseModel):
     question: str
     question_type: int
     is_open: int
-    question_img_path: str
+    question_img_path: str | None
     thumbnail_time: int
     time_limit: int
 
@@ -26,7 +26,7 @@ class AnswerObj(BaseModel):
     answer_num: int
     is_answer: int
     answer: str
-    answer_img_path: str
+    answer_img_path: str | None
 
 
 class QuizAnswerPairObj(BaseModel):
