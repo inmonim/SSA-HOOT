@@ -8,16 +8,28 @@ function CreateQuizShowPage() {
   const [description, setDescription] = useState('');
   const [isOpen, setIsOpen] = useState(true);
 
+  const [myQuizShowList, setMyQuizShowList] = useState([]);
+
+  const accessToken = localStorage.getItem('accessToken')
+  axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+
+  useEffect(() => {
+    axios.get('http://localhost:8000/create_quiz_show/get_my_quiz_show_list')
+      .then(response => {
+        setMyQuizShowList(response.data.quiz_show_list);
+      })
+      .catch(error => {
+        console.log(error)
+      })
+  }, [])
+
   const createQuizShow = () => {
 
     const quizShowData = {
       quiz_show_name: quizShowName,
       description: description,
-      is_open: isOpen
+      is_open: (isOpen ? 0 : 1),
     }
-
-    const accessToken = localStorage.getItem('accessToken')
-    axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
 
     axios.post('http://localhost:8000/create_quiz_show/create_quiz_show', quizShowData)
       .then(response => {
@@ -30,26 +42,36 @@ function CreateQuizShowPage() {
 
   return (
     <div>
+      <h1>나의 퀴즈 쇼</h1>
+
+      <div>
+        {myQuizShowList.map(item => (
+          <li key={item.id}>{item.quiz_show_name}</li>
+        ))}
+      </div>
+
       <h1>퀴즈쇼 생성!</h1>
 
-      <input
-        type="text"
-        value={quizShowName}
-        placeholder="퀴즈쇼 제목"
-        onChange={(e) => setQuizShowName(e.target.value)}
-      />
-      <input
-        type="text"
-        value={description}
-        placeholder="퀴즈쇼 설명"
-        onChange={(e) => setDescription(e.target.value)}
-      />
-      <input
-        type="checkbox"
-        value={isOpen}
-        onChange={(e) => setIsOpen(e.target.value)}
-      />
-      <button onClick={createQuizShow}>퀴즈쇼 생성</button>
+      <div>
+        <input
+          type="text"
+          value={quizShowName}
+          placeholder="퀴즈쇼 제목"
+          onChange={(e) => setQuizShowName(e.target.value)}
+        />
+        <input
+          type="text"
+          value={description}
+          placeholder="퀴즈쇼 설명"
+          onChange={(e) => setDescription(e.target.value)}
+        />
+        <input
+          type="checkbox"
+          value={isOpen}
+          onChange={(e) => setIsOpen(e.target.checked)}
+        />
+        <button onClick={createQuizShow}>퀴즈쇼 생성</button>
+      </div>
     </div>
   )
 }
