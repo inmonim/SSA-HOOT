@@ -25,21 +25,21 @@ function CreateQuizPage() {
   const [quizAnswerPair, setQuizAnswerPair] = useState([]);
   const [lastQuizAnswerPair, setLastQuizAnswerPair] = useState('');
 
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
 
   const accessToken = localStorage.getItem('accessToken')
   axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
 
   useEffect(() => {
-    axios.get('http://localhost:8000/create_quiz/get_my_quiz_list?quiz_show_id=6')
+    axios.get('http://localhost:8000/create_quiz/get_my_quiz_list?quiz_show_id=1')
       .then(response => {
         console.log(response.data)
         setQuizShow(response.data.quiz_show)
         setQuizAnswerPair(response.data.quiz_answer_pair)
 
         setLastQuizAnswerPair(response.data.quiz_answer_pair[response.data.quiz_answer_pair.length - 1])
-        setIsLoading(false)
+        setIsLoading(true)
       })
       .catch(error => {
         console.log(error)
@@ -54,16 +54,16 @@ function CreateQuizPage() {
       <p>{quizShow.create_date}</p>
 
       <h2>퀴즈 제작</h2>
-      {(isLoading && quizAnswerPair) ? <div>Loading...</div> : <CreateQuiz quizAnswerPair={lastQuizAnswerPair} quizShow={quizShow} />}
+      {(isLoading && quizAnswerPair.length) ? <CreateQuiz quizAnswerPair={lastQuizAnswerPair} quizShow={quizShow} /> : <div>생성된 퀴즈가 없습니다!</div>}
 
       <h2>퀴즈 목록</h2>
-      {quizAnswerPair ? quizAnswerPair.map(item => (
+      {quizAnswerPair.length ? quizAnswerPair.map(item => (
         <QuizCard
           key={item.in_order}
           quiz={item.quiz}
           answer={item.answer_list}
         />
-      )) : null}
+      )) : <div>생성된 퀴즈가 없습니다!</div>}
     </div>
   )
 }

@@ -1,7 +1,7 @@
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 
-
+import CreateQuizAnswer from "./CreateQuizAnswer";
 
 function CreateQuiz({ quizAnswerPair, quizShow }) {
   const [question, setQuestion] = useState('');
@@ -11,7 +11,7 @@ function CreateQuiz({ quizAnswerPair, quizShow }) {
   const [timeLimit, setTimeLimit] = useState('');
   const [isOpen, setIsOpen] = useState('');
 
-  console.log(quizShow)
+  const [answerList, setAnswerList] = useState([]);
 
   const accessToken = localStorage.getItem('accessToken')
   axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
@@ -21,7 +21,8 @@ function CreateQuiz({ quizAnswerPair, quizShow }) {
 
   useEffect(() => {
     const quiz = quizAnswerPair.quiz
-    const answerList = quizAnswerPair.answer_list
+
+    setAnswerList(quizAnswerPair.answer_list)
 
     setQuestion(quiz.question)
     setQuestionType(quiz.question_type)
@@ -30,6 +31,10 @@ function CreateQuiz({ quizAnswerPair, quizShow }) {
     setTimeLimit(quiz.time_limit)
     setIsOpen(quiz.is_open)
   }, [])
+
+  const addQuiz = () => {
+    setAnswerList((answerList) => [...answerList, null])
+  }
 
   // useEffect(() => {
   //   console.log(isOpen)
@@ -102,6 +107,14 @@ function CreateQuiz({ quizAnswerPair, quizShow }) {
         >
 
         </button>
+      </div>
+      <div>
+        {answerList.map((answer) => (
+          <CreateQuizAnswer answerObj={answer} />
+        ))}
+        <button
+          onClick={addQuiz}
+        >+</button>
       </div>
     </div>
   )
