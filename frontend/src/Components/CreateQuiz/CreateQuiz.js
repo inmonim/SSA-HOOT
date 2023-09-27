@@ -33,7 +33,11 @@ function CreateQuiz({ quizAnswerPair, quizShow }) {
   }, [])
 
   const addQuiz = () => {
-    setAnswerList((answerList) => [...answerList, null])
+    const addedAnswer = {
+      id: null,
+      answer_num: answerList.length + 1
+    }
+    setAnswerList((answerList) => [...answerList, addedAnswer])
   }
 
   // useEffect(() => {
@@ -110,7 +114,7 @@ function CreateQuiz({ quizAnswerPair, quizShow }) {
       </div>
       <div>
         {answerList.map((answer) => (
-          <CreateQuizAnswer answerObj={answer} />
+          <CreateQuizAnswer key={answer.answer_num} answerObj={answer} />
         ))}
         <button
           onClick={addQuiz}
