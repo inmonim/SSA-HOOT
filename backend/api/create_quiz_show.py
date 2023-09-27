@@ -7,10 +7,12 @@ from fastapi.responses import JSONResponse
 # DB
 from db_conn import session_open
 
-# model, DTO, JWT
+# model, DTO, Rseponse, JWT
 from models.model import QuizShow, QuizShow_Quiz, Quiz
 
 from dto.create_quiz_show import CreateQuizShowDTO, UpdateQuizShowDTO, QuizSetDTO
+
+from response.create_quiz_show import QuizShowListResponse, QuizShowResponse
 
 from auth.jwt_module import verify_token
 
@@ -20,7 +22,9 @@ router = APIRouter()
 
 # 퀴즈쇼 생성
 @router.post("/create_quiz_show")
-async def create_quiz_show(create_quiz_show_dto: CreateQuizShowDTO, user: int = Depends(verify_token)):
+async def create_quiz_show(
+    create_quiz_show_dto: CreateQuizShowDTO, user: int = Depends(verify_token)
+):
     quiz_show_name = create_quiz_show_dto.quiz_show_name
     description = create_quiz_show_dto.description
     is_open = create_quiz_show_dto.is_open
@@ -40,8 +44,9 @@ async def create_quiz_show(create_quiz_show_dto: CreateQuizShowDTO, user: int = 
 
 # 퀴즈쇼 업데이트
 @router.put("/update_quiz_show")
-async def update_quiz_show(update_quiz_show_dto: UpdateQuizShowDTO, user: int = Depends(verify_token)):
-    
+async def update_quiz_show(
+    update_quiz_show_dto: UpdateQuizShowDTO, user: int = Depends(verify_token)
+):
     quiz_show_id = update_quiz_show_dto.quiz_show_id
     quiz_show_name = update_quiz_show_dto.quiz_show_name
     description = update_quiz_show_dto.description
@@ -81,3 +86,14 @@ async def delete_quiz_show(quiz_id: int, user: int = Depends(verify_token)):
         db.commit()
 
     return JSONResponse(content={"detail": "삭제 완료"}, status_code=200)
+
+
+# 나의 퀴즈쇼 리스트 확인
+@router.get("/get_my_quiz_show_list", response_model=QuizShowListResponse)
+async def get_my_quiz_show_list(user: int = Depends(verify_token)):
+    with session_open() as db:
+        quiz_show_list = db.query(QuizShow).filter(QuizShow.host_id == user).all()
+
+    result = {"quiz_show_list": quiz_show_list}
+
+    return result
