@@ -7,9 +7,9 @@ function CreateQuiz({ quizAnswerPair, quizShow }) {
   const [question, setQuestion] = useState('');
   const [questionType, setQuestionType] = useState('');
   const [questionImgPath, setQuestionImgPath] = useState('');
-  const [thumbnailTime, setThumbnailTime] = useState('');
-  const [timeLimit, setTimeLimit] = useState('');
-  const [isOpen, setIsOpen] = useState('');
+  const [thumbnailTime, setThumbnailTime] = useState(5);
+  const [timeLimit, setTimeLimit] = useState(20);
+  const [isOpen, setIsOpen] = useState(1);
 
   const [answerList, setAnswerList] = useState([]);
 
@@ -24,15 +24,24 @@ function CreateQuiz({ quizAnswerPair, quizShow }) {
 
     setAnswerList(quizAnswerPair.answer_list)
 
-    setQuestion(quiz.question)
-    setQuestionType(quiz.question_type)
-    setQuestionImgPath(quiz.question_img_path)
-    setThumbnailTime(quiz.thumbnail_time)
-    setTimeLimit(quiz.time_limit)
-    setIsOpen(quiz.is_open)
+    if (quiz.id) {
+      setQuestion(quiz.question)
+      setQuestionType(quiz.question_type)
+      setQuestionImgPath(quiz.question_img_path)
+      setThumbnailTime(quiz.thumbnail_time)
+      setTimeLimit(quiz.time_limit)
+      setIsOpen(quiz.is_open)
+    } else {
+      setQuestion('')
+      setQuestionType(1)
+      setQuestionImgPath('')
+      setThumbnailTime(5)
+      setTimeLimit(20)
+      setIsOpen(1)
+    }
   }, [])
 
-  const addQuiz = () => {
+  const addAnswer = () => {
     const addedAnswer = {
       id: null,
       answer_num: answerList.length + 1
@@ -114,10 +123,10 @@ function CreateQuiz({ quizAnswerPair, quizShow }) {
       </div>
       <div>
         {answerList.map((answer) => (
-          <CreateQuizAnswer key={answer.answer_num} answerObj={answer} />
+          <CreateQuizAnswer key={answer.answer_num} answerItem={answer} />
         ))}
         <button
-          onClick={addQuiz}
+          onClick={addAnswer}
         >+</button>
       </div>
     </div>

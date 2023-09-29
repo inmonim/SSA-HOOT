@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 
-function CreateQuizAnswer({ answerObj }) {
+function CreateQuizAnswer({ answerItem }) {
 
   const [answerId, setAnswerId] = useState('');
   const [quizId, setQuizId] = useState('');
@@ -10,6 +10,9 @@ function CreateQuizAnswer({ answerObj }) {
   const [answerImgPath, setAnswerImgPath] = useState('');
 
   useEffect(() => {
+
+    const answerObj = answerItem
+
     if (answerObj.id) {
       setAnswerId(answerObj.id)
       setQuizId(answerObj.quiz_id)
@@ -17,6 +20,13 @@ function CreateQuizAnswer({ answerObj }) {
       setIsAnswer(answerObj.is_answer)
       setAnswer(answerObj.answer)
       setAnswerImgPath(answerObj.answer_img_path)
+    } else if (answerObj.quiz_id) {
+      setAnswerId('')
+      setQuizId(answerObj.quiz_id)
+      setAnswerNum(answerObj.answer_num)
+      setIsAnswer(false)
+      setAnswer('')
+      setAnswerImgPath('')
     } else {
       setAnswerId('')
       setQuizId('')
@@ -25,7 +35,7 @@ function CreateQuizAnswer({ answerObj }) {
       setAnswer('')
       setAnswerImgPath('')
     }
-  }, [])
+  }, [answerItem])
 
   useEffect(() => {
     console.log(answer)

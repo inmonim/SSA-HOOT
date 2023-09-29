@@ -31,6 +31,20 @@ function CreateQuizPage() {
   const accessToken = localStorage.getItem('accessToken')
   axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
 
+  const addQuiz = () => {
+    const newQuizAnswerPair = {
+      quiz: { id: null },
+      in_order: lastQuizAnswerPair.in_order + 1,
+      answer_list: []
+    }
+    setLastQuizAnswerPair(newQuizAnswerPair)
+    setQuizAnswerPair((quizAnswerPair) => [...quizAnswerPair, newQuizAnswerPair])
+  }
+
+  useEffect(() => {
+    console.log(lastQuizAnswerPair)
+  }, [lastQuizAnswerPair])
+
   useEffect(() => {
     axios.get('http://localhost:8000/create_quiz/get_my_quiz_list?quiz_show_id=1')
       .then(response => {
@@ -46,6 +60,7 @@ function CreateQuizPage() {
       })
   }, [])
 
+
   return (
     <div>
       <h2>퀴즈쇼 정보</h2>
@@ -54,7 +69,7 @@ function CreateQuizPage() {
       <p>{quizShow.create_date}</p>
 
       <h2>퀴즈 제작</h2>
-      {(isLoading && quizAnswerPair.length) ? <CreateQuiz quizAnswerPair={lastQuizAnswerPair} quizShow={quizShow} /> : <div>생성된 퀴즈가 없습니다!</div>}
+      {(isLoading && quizAnswerPair.length) ? <CreateQuiz key={lastQuizAnswerPair.in_order} quizAnswerPair={lastQuizAnswerPair} quizShow={quizShow} /> : <div>생성된 퀴즈가 없습니다!</div>}
 
       <h2>퀴즈 목록</h2>
       {quizAnswerPair.length ? quizAnswerPair.map(item => (
@@ -64,6 +79,15 @@ function CreateQuizPage() {
           answer={item.answer_list}
         />
       )) : <div>생성된 퀴즈가 없습니다!</div>}
+
+      <div>
+        <button
+
+          onClick={addQuiz}
+        >
+          add Quiz
+        </button>
+      </div>
     </div>
   )
 }
